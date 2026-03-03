@@ -7,11 +7,29 @@ if (hamburger) {
         navMenu.classList.toggle('active');
         hamburger.classList.toggle('active');
     });
+    
+    // Touch support for hamburger
+    hamburger.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        navMenu.classList.toggle('active');
+        hamburger.classList.toggle('active');
+    }, { passive: false });
 }
 
 // Close menu when clicking on a link
 document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', () => {
+        navMenu.classList.remove('active');
+        if (hamburger) hamburger.classList.remove('active');
+    });
+    
+    // Touch support for nav links
+    link.addEventListener('touchstart', function() {
+        this.style.opacity = '0.7';
+    });
+    
+    link.addEventListener('touchend', function() {
+        this.style.opacity = '1';
         navMenu.classList.remove('active');
         if (hamburger) hamburger.classList.remove('active');
     });
@@ -107,9 +125,53 @@ function downloadResume() {
     document.body.removeChild(resumeLink);
 }
 
+// ========== MOBILE DETECTION & OPTIMIZATION ==========
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function isLandscape() {
+    return window.innerHeight < window.innerWidth;
+}
+
+// Handle viewport changes on mobile
+function updateNavHeight() {
+    const nav = document.querySelector('.navbar');
+    if (nav) {
+        const navHeight = nav.offsetHeight;
+        document.documentElement.style.setProperty('--nav-height', navHeight + 'px');
+    }
+}
+
+window.addEventListener('orientationchange', function() {
+    setTimeout(updateNavHeight, 100);
+});
+// also update on load and resize
+window.addEventListener('load', updateNavHeight);
+window.addEventListener('resize', updateNavHeight);
+
+
+// Prevent double-tap zoom on buttons and links
+if (isMobileDevice()) {
+    document.addEventListener('touchend', function(e) {
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
+            e.preventDefault();
+            e.target.click();
+        }
+    }, { passive: false });
+}
+
 // ========== SCROLL TO TOP ON PAGE LOAD ==========
 window.addEventListener('load', () => {
     window.scrollTo(0, 0);
+    
+    // Prevent iOS Safari input zoom
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.fontSize = '16px';
+        });
+    });
 });
 
 // ========== KEYBOARD ACCESSIBILITY ==========
@@ -303,15 +365,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Send button click handler
     if (chatbotSend) {
         chatbotSend.addEventListener('click', sendMessage);
+        
+        // Touch support for send button
+        chatbotSend.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+        });
+        
+        chatbotSend.addEventListener('touchend', function() {
+            this.style.transform = 'scale(1)';
+            sendMessage();
+        });
     }
 
-    // Enter key handler
+    // Enter key handler with mobile support
     if (chatbotInput) {
         chatbotInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                // On mobile, prevent default and send message
+                e.preventDefault();
                 sendMessage();
             }
         });
+        
+        // Prevent auto-capitalization issues
+        chatbotInput.setAttribute('autocapitalize', 'off');
+        chatbotInput.setAttribute('autocorrect', 'off');
     }
     
     console.log('Chatbot initialized successfully!');
